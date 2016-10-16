@@ -11,7 +11,11 @@ class MoviesController < ApplicationController
   end
 
   def index
-    @movies = Movie.all
+    order_by = params[:order_by]
+    #Invalid sort parameter, return default sorting
+    if(order_by != "title" && order_by !="release_date") then order_by = nil; end;
+    @selected_order_criteria = order_by;
+    @movies = order_by ? Movie.all.order(order_by) : Movie.all
   end
 
   def new
