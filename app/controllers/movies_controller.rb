@@ -1,5 +1,5 @@
 class MoviesController < ApplicationController
-
+  
   def movie_params
     params.require(:movie).permit(:title, :rating, :description, :release_date)
   end
@@ -12,10 +12,31 @@ class MoviesController < ApplicationController
 
   def index
     order_by = params[:order_by]
+    ratings = params[:ratings];
+    
+    #Loading the rating values
+    @all_ratings = Movie.all_ratings;
+    
     #Invalid sort parameter, return default sorting
     if(order_by != "title" && order_by !="release_date") then order_by = nil; end;
-    @selected_order_criteria = order_by;
-    @movies = order_by ? Movie.all.order(order_by) : Movie.all
+      
+    @selected_order_criteria = order_by;#To disply highlight
+    
+    
+    if(ratings) then
+      filter_ratings = ratings.keys;
+    else
+      filter_ratings = Movie.all_ratings;
+      
+    end
+    
+    @selected_filters = {};
+    filter_ratings.each{|f|
+      @selected_filters[f] = true;
+    }
+    
+    @movies = order_by ? Movie.where({ rating: filter_ratings}).order(order_by) : Movie.where({ rating: filter_ratings})
+      
   end
 
   def new
@@ -45,5 +66,9 @@ class MoviesController < ApplicationController
     flash[:notice] = "Movie '#{@movie.title}' deleted."
     redirect_to movies_path
   end
+  
+  #def all_ratings
+   
+  #end
 
 end
