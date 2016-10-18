@@ -11,22 +11,57 @@ class MoviesController < ApplicationController
   end
 
   def index
-    order_by = params[:order_by]
+    order_by = params[:order_by];
     ratings = params[:ratings];
+    redirect = "";
     
-    #Loading the rating values
+    #Loading the rating values to be showed
     @all_ratings = Movie.all_ratings;
     
     #Invalid sort parameter, return default sorting
-    if(order_by != "title" && order_by !="release_date") then order_by = nil; end;
+    if(order_by != "title" && order_by !="release_date") then 
+      if(session[:order_by]) then
+        order_by = session[:order_by];
+        
+        fragmented_url = request.url.split("?");
+        if(fragmented_url.length == 2) then
+          redirect = fragmented_url[0] + "?" + fragmented_url[1] + "&order_by=" + order_by;
+        else
+          redirect = fragmented_url[0] + "?order_by=" + order_by; 
+        end
+      else
+        order_by = nil; 
+      end
+    else
+      session[:order_by] = order_by;#Valid, store it in session
+    end;
       
     @selected_order_criteria = order_by;#To disply highlight
     
     
     if(ratings) then
+      logger.debug "ENTRE AL KEYS"
       filter_ratings = ratings.keys;
+      session[:filter_ratings] = filter_ratings;
     else
-      filter_ratings = Movie.all_ratings;
+      if (session[:filter_ratings]) then
+        filter_ratings = session[:filter_ratings];
+        
+        filter_ratings_url = "";
+        filter_ratings.each{|r|
+          filter_ratings_url += "ratings[" + r+"]=ratings[" + r + "]&"
+        }
+        
+        if (redirect == "") then
+          redirect += "?" + filter_ratings_url;
+        else
+          redirect += "&" + filter_ratings_url;
+        end
+        
+      else
+        filter_ratings = Movie.all_ratings;
+        session[:filter_ratings] = filter_ratings;
+      end
       
     end
     
@@ -34,7 +69,11 @@ class MoviesController < ApplicationController
     filter_ratings.each{|f|
       @selected_filters[f] = true;
     }
-    
+  
+    if(redirect != "") then
+      flash.keep;
+      redirect_to redirect;
+    end
     @movies = order_by ? Movie.where({ rating: filter_ratings}).order(order_by) : Movie.where({ rating: filter_ratings})
       
   end
@@ -67,8 +106,4 @@ class MoviesController < ApplicationController
     redirect_to movies_path
   end
   
-  #def all_ratings
-   
-  #end
-
 end
