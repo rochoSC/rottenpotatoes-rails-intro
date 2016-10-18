@@ -13,7 +13,7 @@ class MoviesController < ApplicationController
   def index
     order_by = params[:order_by];
     ratings = params[:ratings];
-    redirect = "";
+    redirect = ""; #Redirection url
     
     #Loading the rating values to be showed
     @all_ratings = Movie.all_ratings;
@@ -30,23 +30,23 @@ class MoviesController < ApplicationController
           redirect = fragmented_url[0] + "?order_by=" + order_by; 
         end
       else
-        order_by = nil; 
+        order_by = nil; #Default state, no order, no filter
       end
     else
       session[:order_by] = order_by;#Valid, store it in session
     end;
       
-    @selected_order_criteria = order_by;#To disply highlight
+    @selected_order_criteria = order_by;#For checkbox
     
-    
+    #Validate if the user filtered the movies
     if(ratings) then
-      logger.debug "ENTRE AL KEYS"
       filter_ratings = ratings.keys;
       session[:filter_ratings] = filter_ratings;
     else
       if (session[:filter_ratings]) then
         filter_ratings = session[:filter_ratings];
         
+        #Generate url params
         filter_ratings_url = "";
         filter_ratings.each{|r|
           filter_ratings_url += "ratings[" + r+"]=ratings[" + r + "]&"
@@ -59,12 +59,14 @@ class MoviesController < ApplicationController
         end
         
       else
+        #Default, all the ratings selected
         filter_ratings = Movie.all_ratings;
         session[:filter_ratings] = filter_ratings;
       end
       
     end
-    
+
+    #Generate control variables for checkbox "checked"
     @selected_filters = {};
     filter_ratings.each{|f|
       @selected_filters[f] = true;
@@ -74,6 +76,7 @@ class MoviesController < ApplicationController
       flash.keep;
       redirect_to redirect;
     end
+    
     @movies = order_by ? Movie.where({ rating: filter_ratings}).order(order_by) : Movie.where({ rating: filter_ratings})
       
   end
